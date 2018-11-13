@@ -17,7 +17,6 @@ namespace CitiesWeb.API.Services
         void PatchCity(City city);
         void UpdateCity(City city);
         void DeleteCity(City city);
-
         void AddPointOfInterestForCity(int cityId, PointOfInterest pointOfInterest);
         void DeletePointOfInterest(PointOfInterest pointOfInterest);
         bool Save();
