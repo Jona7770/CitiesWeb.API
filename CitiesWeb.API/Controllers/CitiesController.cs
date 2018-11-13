@@ -1,5 +1,8 @@
-﻿using CitiesWeb.API.Data;
+﻿using AutoMapper;
+using CitiesWeb.API.Data;
+using CitiesWeb.API.Entities;
 using CitiesWeb.API.Models;
+using CitiesWeb.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,46 +15,97 @@ namespace CitiesWeb.API.Controllers
     [Route("api/cities")]
     public class CitiesController : Controller
     {
-        private CitiesDbContext _context;
+        private ICitiesRepository _repository;
 
-        public CitiesController(CitiesDbContext context)
+        public CitiesController(ICitiesRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
-        [HttpGet]
-        public IActionResult GetAll() 
+
+        [HttpGet()]
+        public IActionResult GetCities(bool includePointsOfInterest = false)
         {
-            var cities = _context.Cities.ToList();
-            return Ok(Json(cities));
+            var cityEntities = _repository.GetCities(includePointsOfInterest);
+
+            if (includePointsOfInterest)
+            {
+                var citiesResult = Mapper.Map<List<CityDTO>>(cityEntities);
+                return Ok(citiesResult);
+            }
+            var results = Mapper.Map<IEnumerable<CityWithoutPointsOfInterestDto>>(cityEntities);
+
+            return Ok(results);
         }
-        [HttpGet]
-        [Route("{id}")]
-        public IActionResult GetById(int id)
+
+        [HttpGet("{id}")]
+        public IActionResult GetCity(int id, bool includePointsOfInterest = false)
         {
-            var city = _context.Cities.FirstOrDefault(c => c.Id == id);
+            var city = _repository.GetCity(id, includePointsOfInterest);
+
             if (city == null)
             {
-                return BadRequest(city);
+                return NotFound();
             }
-            return Ok(Json(city));
+
+            if (includePointsOfInterest)
+            {
+                var cityResult = Mapper.Map<CityDTO>(city);
+                return Ok(cityResult);
+            }
+
+            var cityWithoutPointsOfInterestResult = Mapper.Map<CityWithoutPointsOfInterestDto>(city);
+            return Ok(cityWithoutPointsOfInterestResult);
         }
+
         [HttpPost]
-        public IActionResult CreateCity([FromBody] City city)
+        public IActionResult CreateCity([FromBody]CityDTO city)
         {
-            int idmax = _context.Cities.Max(c => c.Id);
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
-            var newCity = new City()
-            {
-                Id = idmax++,
-                Name = city.Name,
-                Description = city.Description,
-                PointOfInterests = city.PointOfInterests
-            };
-            return Ok(newCity);
+            var cityToReturn = Mapper.Map<City>(city);
+            _repository.CreateCity(cityToReturn);
+            return Ok(city);
         }
 
+        [HttpPatch]
+        public IActionResult PatchCity([FromBody]City city)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+            var cityToReturn = Mapper.Map<City>(city);
+            _repository.PatchCity(cityToReturn);
+            return Ok(city);
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult UpdateCity(int id, bool includePointsOfInterest)
+        {
+            var cityToUpdate = _repository.GetCity(id, includePointsOfInterest);
+            if (cityToUpdate == null)
+            {
+                return NotFound();
+            }
+
+            _repository.UpdateCity(cityToUpdate);
+            return NoContent();
+
+        }
+
+        [HttpDelete]
+        public IActionResult DeleteCity(int id, bool includePointsOfInterest = true)
+        {
+            var cityToDelete = _repository.GetCity(id, includePointsOfInterest);
+            if (cityToDelete == null)
+            {
+                return NotFound();
+            }
+
+            _repository.DeleteCity(cityToDelete);
+            return Ok(cityToDelete);
+        }
     }
 }
