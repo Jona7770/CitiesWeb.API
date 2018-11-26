@@ -66,6 +66,19 @@ namespace CitiesWeb.API.Data
                      }
                 }
             };
+
+            var users = new List<User>()
+            {
+                new User()
+                {
+                    FirstName = "Julian",
+                    LastName = "Kock",
+                    Password = "OMEGALUL",
+                    Username = "jkock",
+                }
+
+            };
+            context.Users.AddRange(users);
             context.Cities.AddRange(cities);
             context.SaveChanges();
         }

@@ -105,6 +105,7 @@ namespace CitiesWeb.API.Controllers
             }
 
             _repository.DeleteCity(cityToDelete);
+
             return Ok(cityToDelete);
         }
     }
